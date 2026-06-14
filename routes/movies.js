@@ -20,28 +20,29 @@ router.get('/', async (req, res) => {
   // WHERE 1=1 lets us append AND clauses unconditionally without tracking whether it's the first filter
   let where = 'WHERE 1=1';
   const params = [];
+  let paramIndex = 1;
 
   if (search) {
-    where += ' AND m.title LIKE ?';
+    where += ` AND m.title ILIKE $${paramIndex++}`;
     params.push(`%${search}%`);
   }
   if (categoryId) {
-    where += ' AND m.category_id = ?';
+    where += ` AND m.category_id = $${paramIndex++}`;
     params.push(categoryId);
   }
 
   try {
-    const [[{ total }]] = await db.query(
+    const { rows: [{ total }] } = await db.query(
       `SELECT COUNT(*) AS total FROM movie m ${where}`, params
     );
     const totalPages = Math.ceil(total / PAGE_SIZE);
 
-    const [movies] = await db.query(
-      `SELECT m.*, c.name AS category_name FROM movie m LEFT JOIN category c ON m.category_id = c.id ${where} ORDER BY m.release_year DESC, m.release_month DESC LIMIT ? OFFSET ?`,
+    const { rows: movies } = await db.query(
+      `SELECT m.*, c.name AS category_name FROM movie m LEFT JOIN category c ON m.category_id = c.id ${where} ORDER BY m.release_year DESC, m.release_month DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
       [...params, PAGE_SIZE, offset]
     );
-    const [categories] = await db.query('SELECT * FROM category ORDER BY name');
-    const [favRows] = await db.query('SELECT movie_id FROM favorites');
+    const { rows: categories } = await db.query('SELECT * FROM category ORDER BY name');
+    const { rows: favRows } = await db.query('SELECT movie_id FROM favorites');
     // Set gives O(1) has() checks in the template instead of repeated array scans
     const favoriteIds = new Set(favRows.map(r => r.movie_id));
     res.render('movies/index', { movies, categories, search, categoryId, favoriteIds, page, totalPages });
@@ -58,12 +59,12 @@ router.get('/', async (req, res) => {
  */
 router.get('/:id', async (req, res) => {
   try {
-    const [rows] = await db.query(
-      'SELECT m.*, c.name AS category_name FROM movie m LEFT JOIN category c ON m.category_id = c.id WHERE m.id = ?',
+    const { rows } = await db.query(
+      'SELECT m.*, c.name AS category_name FROM movie m LEFT JOIN category c ON m.category_id = c.id WHERE m.id = $1',
       [req.params.id]
     );
     if (!rows.length) return res.status(404).render('404');
-    const [fav] = await db.query('SELECT id FROM favorites WHERE movie_id = ?', [req.params.id]);
+    const { rows: fav } = await db.query('SELECT id FROM favorites WHERE movie_id = $1', [req.params.id]);
     res.render('movies/show', { movie: rows[0], isFavorite: fav.length > 0 });
   } catch (err) {
     console.error(err);
@@ -79,11 +80,11 @@ router.get('/:id', async (req, res) => {
 router.post('/:id/favorite', async (req, res) => {
   const movieId = req.params.id;
   // Toggle: remove if already favorited, add if not
-  const [fav] = await db.query('SELECT id FROM favorites WHERE movie_id = ?', [movieId]);
+  const { rows: fav } = await db.query('SELECT id FROM favorites WHERE movie_id = $1', [movieId]);
   if (fav.length > 0) {
-    await db.query('DELETE FROM favorites WHERE movie_id = ?', [movieId]);
+    await db.query('DELETE FROM favorites WHERE movie_id = $1', [movieId]);
   } else {
-    await db.query('INSERT INTO favorites (movie_id) VALUES (?)', [movieId]);
+    await db.query('INSERT INTO favorites (movie_id) VALUES ($1)', [movieId]);
   }
   // Redirect back to the page the user came from (works on both list and detail views)
   res.redirect(req.get('Referer') || `/movies/${movieId}`);

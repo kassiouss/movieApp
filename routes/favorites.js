@@ -13,16 +13,16 @@ router.get('/', async (req, res) => {
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const offset = (page - 1) * PAGE_SIZE;
 
-    const [[{ total }]] = await db.query('SELECT COUNT(*) AS total FROM favorites');
+    const { rows: [{ total }] } = await db.query('SELECT COUNT(*) AS total FROM favorites');
     const totalPages = Math.ceil(total / PAGE_SIZE);
 
-    const [movies] = await db.query(
+    const { rows: movies } = await db.query(
       `SELECT m.*, c.name AS category_name
        FROM favorites f
        JOIN movie m ON f.movie_id = m.id
        LEFT JOIN category c ON m.category_id = c.id
        ORDER BY m.release_year DESC, m.release_month DESC
-       LIMIT ? OFFSET ?`,
+       LIMIT $1 OFFSET $2`,
       [PAGE_SIZE, offset]
     );
     res.render('favorites/index', { movies, page, totalPages });

@@ -1,13 +1,12 @@
-const mysql = require('mysql2/promise');
+const { Pool } = require('pg');
 
-// Pool reuses connections across requests instead of opening a new one each time
-const pool = mysql.createPool({
+const pool = new Pool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
-  waitForConnections: true, // queue requests when all connections are busy
-  connectionLimit: 10,
+  port: process.env.DB_PORT || 5432,
+  max: 10,
 });
 
 module.exports = pool;
