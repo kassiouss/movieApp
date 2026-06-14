@@ -1,0 +1,91 @@
+<%- include('../partials/header', { title: 'Favorites' }) %>
+
+<h2 class="mb-4"><i class="bi bi-heart-fill text-danger me-2"></i>Favorites</h2>
+
+<% if (movies.length === 0) { %>
+  <div class="alert alert-info">No favorites yet. <a href="/movies">Browse movies</a> and add some!</div>
+<% } else { %>
+  <div class="row row-cols-1 row-cols-md-3 g-4">
+    <% movies.forEach(movie => { %>
+      <div class="col">
+        <div class="card h-100 shadow-sm movie-card">
+          <div class="movie-poster-wrapper">
+            <% if (movie.image_url) { %>
+              <img src="<%= movie.image_url %>" class="card-img-top movie-poster" alt="<%= movie.title %>" loading="lazy" />
+            <% } else { %>
+              <div class="card-img-top movie-poster-placeholder d-flex align-items-center justify-content-center bg-secondary text-white">
+                <i class="bi bi-film fs-1"></i>
+              </div>
+            <% } %>
+            <a href="/movies/<%= movie.id %>" class="poster-overlay">
+              <i class="bi bi-eye fs-1 text-white"></i>
+            </a>
+          </div>
+          <div class="card-body position-relative">
+            <h5 class="card-title"><%= movie.title %></h5>
+            <form class="fav-form position-absolute bottom-0 end-0 m-2" data-movie-id="<%= movie.id %>">
+              <button type="submit" class="btn btn-sm btn-warning" title="Remove from favorites">
+                <i class="bi bi-heart-fill"></i>
+              </button>
+            </form>
+            <p class="card-text text-muted small">
+              <% if (movie.release_year) { %><span class="badge bg-dark"><%= movie.release_year %></span><% } %>
+              <% if (movie.category_name) { %><span class="badge bg-secondary ms-1"><%= movie.category_name %></span><% } %>
+            </p>
+            <% if (movie.rating) { %>
+              <p class="mb-1"><i class="bi bi-star-fill text-warning"></i> <%= movie.rating %></p>
+            <% } %>
+          </div>
+          <div class="card-footer">
+            <a href="/movies/<%= movie.id %>" class="btn btn-sm btn-primary w-100">View Details</a>
+          </div>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+<% } %>
+
+<% if (totalPages > 1) { %>
+  <nav id="pagination" class="mt-5 d-flex justify-content-center" data-page="<%= page %>">
+    <ul class="pagination">
+      <li class="page-item <%= page === 1 ? 'disabled' : '' %>">
+        <a class="page-link" href="/favorites?page=<%= page - 1 %>">Previous</a>
+      </li>
+      <% for (let i = 1; i <= totalPages; i++) { %>
+        <li class="page-item <%= i === page ? 'active' : '' %>">
+          <a class="page-link" href="/favorites?page=<%= i %>"><%= i %></a>
+        </li>
+      <% } %>
+      <li class="page-item <%= page === totalPages ? 'disabled' : '' %>">
+        <a class="page-link" href="/favorites?page=<%= page + 1 %>">Next</a>
+      </li>
+    </ul>
+  </nav>
+<% } else { %>
+  <nav id="pagination" data-page="<%= page %>"></nav>
+<% } %>
+
+<script>
+  const nav = document.getElementById('pagination');
+  const page = parseInt(nav.dataset.page);
+
+  const savedScroll = sessionStorage.getItem('favScrollY');
+  if (savedScroll !== null) {
+    window.scrollTo(0, parseInt(savedScroll));
+    sessionStorage.removeItem('favScrollY');
+  }
+
+  document.querySelectorAll('.fav-form').forEach(form => {
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      const movieId = form.dataset.movieId;
+      sessionStorage.setItem('favScrollY', window.scrollY);
+      await fetch(`/movies/${movieId}/favorite`, { method: 'POST' });
+      const remaining = document.querySelectorAll('.fav-form').length - 1;
+      const newPage = remaining === 0 && page > 1 ? page - 1 : page;
+      window.location.href = `/favorites?page=${newPage}`;
+    });
+  });
+</script>
+
+<%- include('../partials/footer') %>

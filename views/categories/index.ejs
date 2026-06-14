@@ -1,0 +1,27 @@
+<%- include('../partials/header', { title: 'Categories' }) %>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2>Categories</h2>
+</div>
+
+<% if (categories.length === 0) { %>
+  <div class="alert alert-info">No categories found.</div>
+<% } else { %>
+  <div class="row row-cols-1 row-cols-md-3 g-4">
+    <% categories.forEach(cat => { %>
+      <div class="col">
+        <a href="/movies?category=<%= cat.id %>" class="text-decoration-none">
+          <div class="card h-100 shadow-sm text-center p-4 movie-card">
+            <div class="card-body">
+              <i class="bi bi-collection-fill fs-1 text-warning mb-3"></i>
+              <h5 class="card-title fw-bold"><%= cat.name %></h5>
+              <span class="badge bg-dark fs-6"><%= cat.movie_count %> <%= cat.movie_count === 1 ? 'movie' : 'movies' %></span>
+            </div>
+          </div>
+        </a>
+      </div>
+    <% }) %>
+  </div>
+<% } %>
+
+<%- include('../partials/footer') %>

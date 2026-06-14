@@ -1,0 +1,83 @@
+<%- include('partials/header', { title: 'Home' }) %>
+
+<div class="hero text-white text-center py-5 mb-5 rounded">
+  <h1 class="display-4 fw-bold"><i class="bi bi-camera-reels me-2"></i>MovieApp</h1>
+  <p class="lead">Discover, track, and manage your favorite films.</p>
+  <a href="/movies" class="btn btn-warning btn-lg">Browse Movies</a>
+</div>
+
+<h2 class="mb-4">Latest Releases</h2>
+
+<% if (movies.length === 0) { %>
+  <div class="alert alert-info">No movies yet.</div>
+<% } else { %>
+  <div class="row row-cols-1 row-cols-md-3 g-4">
+    <% movies.forEach(movie => { %>
+      <div class="col">
+        <div class="card h-100 shadow-sm movie-card">
+          <div class="movie-poster-wrapper">
+            <% if (movie.image_url) { %>
+              <img src="<%= movie.image_url %>" class="card-img-top movie-poster" alt="<%= movie.title %>" loading="lazy" />
+            <% } else { %>
+              <div class="card-img-top movie-poster-placeholder d-flex align-items-center justify-content-center bg-secondary text-white">
+                <i class="bi bi-film fs-1"></i>
+              </div>
+            <% } %>
+            <a href="/movies/<%= movie.id %>" class="poster-overlay">
+              <i class="bi bi-eye fs-1 text-white"></i>
+            </a>
+          </div>
+          <div class="card-body position-relative">
+            <h5 class="card-title"><%= movie.title %></h5>
+            <p class="card-text text-muted small">
+              <% if (movie.category_name) { %><span class="badge bg-dark"><%= movie.category_name %></span><% } %>
+            </p>
+            <form class="fav-form position-absolute bottom-0 end-0 m-2" data-movie-id="<%= movie.id %>">
+              <button type="submit" class="btn btn-sm <%= favoriteIds.has(movie.id) ? 'btn-warning' : 'btn-outline-warning' %>" data-fav="<%= favoriteIds.has(movie.id) ? '1' : '0' %>">
+                <i class="bi bi-heart<%= favoriteIds.has(movie.id) ? '-fill' : '' %>"></i>
+              </button>
+            </form>
+          </div>
+          <div class="card-footer">
+            <a href="/movies/<%= movie.id %>" class="btn btn-sm btn-primary w-100">View Details</a>
+          </div>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+<% } %>
+
+<% if (totalPages > 1) { %>
+  <nav class="mt-5 d-flex justify-content-center">
+    <ul class="pagination">
+      <li class="page-item <%= page === 1 ? 'disabled' : '' %>">
+        <a class="page-link" href="/?page=<%= page - 1 %>">Previous</a>
+      </li>
+      <% for (let i = 1; i <= totalPages; i++) { %>
+        <li class="page-item <%= i === page ? 'active' : '' %>">
+          <a class="page-link" href="/?page=<%= i %>"><%= i %></a>
+        </li>
+      <% } %>
+      <li class="page-item <%= page === totalPages ? 'disabled' : '' %>">
+        <a class="page-link" href="/?page=<%= page + 1 %>">Next</a>
+      </li>
+    </ul>
+  </nav>
+<% } %>
+
+<script>
+  document.querySelectorAll('.fav-form').forEach(form => {
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      const movieId = form.dataset.movieId;
+      await fetch(`/movies/${movieId}/favorite`, { method: 'POST' });
+      const btn = form.querySelector('button');
+      const isFav = btn.dataset.fav === '1';
+      btn.dataset.fav = isFav ? '0' : '1';
+      btn.className = `btn btn-sm ${isFav ? 'btn-outline-warning' : 'btn-warning'}`;
+      btn.querySelector('i').className = `bi bi-heart${isFav ? '' : '-fill'}`;
+    });
+  });
+</script>
+
+<%- include('partials/footer') %>
