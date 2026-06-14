@@ -65,7 +65,7 @@ router.get('/:id', async (req, res) => {
     );
     if (!rows.length) return res.status(404).render('404');
     const { rows: fav } = await db.query('SELECT id FROM favorites WHERE movie_id = $1', [req.params.id]);
-    res.render('movies/show', { movie: rows[0], isFavorite: fav.length > 0 });
+    res.render('movies/detail', { movie: rows[0], isFavorite: fav.length > 0 });
   } catch (err) {
     console.error(err);
     res.status(500).send('Server error');

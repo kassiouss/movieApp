@@ -38,7 +38,7 @@ movieApp/
 │   │   └── footer.ejs
 │   ├── movies/
 │   │   ├── index.ejs       # Movie list with search, filter, pagination
-│   │   └── show.ejs        # Movie detail
+│   │   └── detail.ejs        # Movie detail
 │   ├── categories/
 │   │   └── index.ejs       # Category list with movie counts
 │   └── favorites/
